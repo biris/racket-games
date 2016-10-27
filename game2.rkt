@@ -9,6 +9,7 @@
 
 
 (define NEW 33)
+(define NEW33 33)
 (define NEW2 33)
 (define NEW3 33)
 (define (add-3-to-state current-state)
