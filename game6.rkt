@@ -8,10 +8,17 @@
 ;; MT-SCENE
 ;; ENDGAME-TEXT-SIZE
 
+;; MIN-GOOS
+;; MAX-GOOS
 
 ;; data representation
 
+
+;; A Pit is a (pit Snake (Listof Goo))
+
 (struct pit (snake goos) #:transparent)
+
+;; Snake is (make-snake Directions (cons Seg [Listof Seg]))
 
 (struct snake (dir segs) #:transparent)
 
@@ -33,6 +40,7 @@
 
 (define (start-snake)
   (big-bang (pit (snake "right" (list (posn 1 1)))
+                 (get-random-goos)
                  (list (fresh-goo)
                        (fresh-goo)
                        (fresh-goo)
@@ -53,11 +61,21 @@
       (pit (grow snake) (age-goo (eat goos goo-to-eat)))
       (pit (slither snake) (age-goo goos))))
 
+(define (get-random-goos)
+  (define l (random min max))
+  (build-list l fresh-goo))
+
+
+;; Snake [Listof Goo] -> Goo or #f
+;; Can the snake eat any of the goos?
+
 (define (can-eat snake goos)
   (cond ((empty? goos) #f)
         (else (if (close? (snake-head snake) (first goos))
                   (first goos)
                   (can-eat snake (rest goos))))))
+
+
 
 (define (close? s g)
   (posn=? s (goo-loc g)))
@@ -188,7 +206,8 @@
   (or (self-colliding? snake) (wall-colliding? snake)))
 
 (define (render-end w)
-  (overlay (text "Game Over" ENDGAME-TEXT-SIZE "black")
+  (overlay (text (string-append "Game over, score: "
+                                (number->string (length (snake-body (pit-snake w))))) ENDGAME-TEXT-SIZE "black")
            (render-snake-world w)))
 
 (define (self-colliding? snake)
@@ -199,6 +218,42 @@
   (define y (posn-x (snake-head snake)))
   (or (= x 0) (= x SIZE)
       (= y 0) (= y SIZE)))
+
+
+(define (posn=? p1 p2)
+  (and (= (posn-x p1) (posn-x p1))
+       (= (posn-x p1) (posn-x p1))))
+
+(define (snake-head sn)
+  (first (snake-segs sn)))
+
+(define (snake-body sn)
+  (rest (snake-segs sn)))
+
+(define (snake-tail sn)
+  (last (snake-segs sn)))
+
+(define (snake-change-dir sn d)
+  (snake d (snake-segs sn)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
