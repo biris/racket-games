@@ -24,6 +24,21 @@
 (define PER-ROW 4)
 (define MONSTER# 12)
 
+(define TARGET (circle (- (/ w 2) 2) 'outline 'blue))
+
+
+;; string constants
+(define STRENGTH "strength")
+(define AGILITY "agility")
+(define HEALTH "health")
+(define LOSE  "YOU LOSE")
+(define WIN "YOU WIN")
+(define DEAD "DEAD")
+(define REMAINING "Remaining attacks ")
+(define INSTRUCTIONS-2 "Select a monster using the arrow keys")
+(define INSTRUCTIONS-1
+
+
 ;; IMAGES
 
 ;; HYDRA-IMAGE
@@ -32,6 +47,19 @@
 ;; HYDRA-IMAGE
 ;; SLIME-IMAGE
 ;; BRIGAND-IMAGE
+
+;; INSTRUCTION-TEXT-SIZE
+;; ATTACK-COLOR
+
+;; GUI
+
+
+;; V-SPACER
+;; H-SPACER
+
+(define V-SPACER (rectangle 0 10 "solid" "white"))
+(define H-SPACER (rectangle 10 0 "solid" "white"))
+
 
 ;; REPL
 
@@ -120,6 +148,94 @@
 (define (instructions w)
   (define na (number->string (orc-world-attack# w)))
   (define ra (string-append REMAINING na))
-  (define txt (string-append REMAINING na))
+  (define txt (text ra INSTRUCTION-TEXT-SIZE ATTACK-COLOR))
   (above txt INSTRUCTION-TEXT))
+
+(define (message str)
+  (text str MESSAGE-SIZE MESSAGE-COLOR))
+
+
+(define (render-orc-world w t additional-text)
+  (define i-player (render-player (orc-world-player w)))
+  (define i-monsters (render-monsters (orc-world-lom w) t))
+  (above V-SPACER
+         (beside H-SPACER
+                 i-player
+                 H-SPACER H-SPACER H-SPACER
+                 (i-monster
+                  V-SPACER V-SPACER V-SPACER
+                  additional-text)
+                 H-SPACER)
+         V-SPACER))
+
+(define (render-player p)
+  (above/align
+   "left"
+   (status-bar (player-strength p) MAX-STRENGTH STRENGTH-COLOR STRENGTH)
+   V-SPACER
+   (status-bar (player-agility p) MAX-AGILITY AGILITY-COLOR AGILITY)
+   V-SPACER
+   (status-bar (player-health p) MAX-HEALTH HEALTH-COLOR HEALTH)
+   V-SPACER V-SPACER V-SPACER
+   PLAYER-IMAGE))
+
+
+(define (status-bar v-current v-max color label)
+  (define w (* (/ v-current v-max) HEALTH-BAR-WIDTH))
+  (define f (rectangle w HEALTH-BAR-HEIGHT 'solid color))
+  (define b (rectangle HEALTH-BAR-WIDTH HEALTH-BAR-HEIGHT 'outline color))
+  (define bar (overlay/align 'left 'top f b))
+  (beside bar H-SPACER (text label HEALTH-SIZE color)))
+
+;; [Listof Monster] [Opt Nat] -> Image
+;; add all monsters on lom, including status bar
+;; label the target unless it isn't called for
+(define (render-monsters lom with-target)
+  ;; the currently targeted monster (if needed)
+  (define target
+    (if (number? with-target)
+        (list-ref lom with-target)
+        'a-silly-symbol-that-cannot-be-eq-to-an-orc))
+
+  ;; Monster -> Image
+  (define (render-one-monster m)
+    (define image
+      (if (eq? m target)
+          (overlay TARGET (monster-image m))
+          (monster-image m)))
+    (define health (monster-health m))
+    (define health-bar
+      (if (= health 0)
+          (overlay DEAD-TEXT (status-bar 0 1 'white ""))
+          (status-bar health MONSTER-HEALTH0 MONSTER-COLOR "")))
+    (above health-bar image))
+
+  (arrange (map render-one-monster lom)))
+
+
+(define (arrange lom)
+  (cond ((empty? lom) empty-image)
+        (else (define r (take lom PER-ROW))
+              (above r (arrange (drop lom PER-ROW))))))
+
+
+(define (win? w)
+  (all-dead? (orc-world-lom w)))
+
+(define (lose? w)
+  (player-dead? (orc-world-player w)))
+
+(define (player-dead? p)
+  (or (= (player-health 0))
+      (= (player-strength 0))
+      (= (player-agility 0))))
+
+(define (all-dead? lom)
+  (not (ormap monster-alive? lom)))
+
+(define (monster-alive? m)
+  (> (monster-health m) 0))
+
+
+
 
