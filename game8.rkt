@@ -8,7 +8,7 @@
 
 (struct slime monster (sliminess) #:transparent)
 (struct hydra monster () #:transparent)
-(struct brigland monster () #:transparent)
+(struct brigand monster () #:transparent)
 
 ;; player attributes
 (define MAX-HEALTH 35)
@@ -36,8 +36,7 @@
 (define DEAD "DEAD")
 (define REMAINING "Remaining attacks ")
 (define INSTRUCTIONS-2 "Select a monster using the arrow keys")
-(define INSTRUCTIONS-1
-
+(define INSTRUCTIONS-1)
 
 ;; IMAGES
 
@@ -59,6 +58,9 @@
 
 (define V-SPACER (rectangle 0 10 "solid" "white"))
 (define H-SPACER (rectangle 10 0 "solid" "white"))
+
+;; MORE CONATNTS
+;;  STAB-DAMAGE
 
 
 ;; REPL
@@ -88,7 +90,6 @@
             (on-key player-acts-on-monsters)
             (to-draw render-orc-battles)
             (stop-when end-of-orc-battle? render-the-end)))
-
 
 (define (initialize-orc-world)
   (define player0 (initialize-player))
@@ -142,7 +143,7 @@
        [(0) (orc ORC-IMAGE health (random+ CLUB-STRENGTH))]
        [(1) (hydra HYDRA-IMAGE health)]
        [(2) (slime SLIME-IMAGE health (random+ SLIMENESS))]
-       [(3) (hydra SLIME-IMAGE health)]))))
+       [(3) (brigand BRIGAND-IMAGE health)]))))
 
 
 (define (instructions w)
@@ -205,6 +206,7 @@
           (monster-image m)))
     (define health (monster-health m))
     (define health-bar
+
       (if (= health 0)
           (overlay DEAD-TEXT (status-bar 0 1 'white ""))
           (status-bar health MONSTER-HEALTH0 MONSTER-COLOR "")))
@@ -235,6 +237,67 @@
 
 (define (monster-alive? m)
   (> (monster-health m) 0))
+
+(define (end-turn w)
+  (set-orc-world-attack#! w 0))
+
+
+(define (heal w)
+  (decrease-attack# w)
+  (player-health+ (orc-world-palyer w) HEALING))
+
+(define (stab w)
+  (decrease-attack# w)
+  (define target (list-ref (orc-world-lom w) (orc-world-target w)))
+  (define damage (random-quotient (player-strength (orc-world-player w)) STAB-DAMAGE))
+  (damage-monster target damage))
+
+(define (flail w)
+  (decrease-attack# w)
+  (define target (current-target w))
+  (define alive (filter monster-alive (orc-world-lom w)))
+  (define pick#
+    (min
+     (random-quotient (player-strength (orc-world-player w)) FLAIL-DAMAGE)     
+     (length alive))
+    (define getem (cons target (take alive pick#)))
+    (for-each (lambda (m) (damage-monster m 1)) getem)))
+
+(define (decrease-attacks# w)
+  (set-orc-world-attack#! w (sub1 (orc-wordl-attack# w))))
+
+(define (damage-monster m delta) 
+  (set-monster-health! m (interval- (monster-health m) delta)))
+
+(define (current-target w)
+  (list-ref (orc-world-lom) (orc-world-target w)))
+
+(define (give-monster-turn-if-attack#=0 w)
+  (when (zero? (orc-world-attack# w))
+    (define player (orc-world-player w))
+    (all-monsters-attack-player player (orc-world-lom w))
+    (set-orc-world#! w (random-number-of-attacks player))))
+
+
+(define (all-monsters-attack-player player lom)
+  (define (one-monster-attacks-palyer m)
+    (cond
+     [(orc? m)
+      (player-health+ player (random- (orc-club m)))]
+     [(hydra? m)
+      (player-health+ player (random- (monster-health m)))]
+     [(slime? m)
+      (player-health+ player -1)
+      (player-agility+ player
+                       (random- (slime-slimeness monster)))]
+     [(brigand? m)
+      (case (random 5)
+        [(0) (player-health+ player HEALTH-DAMAGE)]
+        [(1) (player-agility+ player AGILITY-DAMAGE)]
+        [(2) (player-strength+ player STRENGTH-DAMAGE)])]))
+  (define live-monsters (filter monster-alive? lom))
+  (for-each one-monster-attacks-palyer live-monsters))
+
 
 
 

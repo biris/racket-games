@@ -1,5 +1,3 @@
-
-
 (define (generate-game-tree board player1 palyer2)
   (define (next-board-tree board0 player not-player)
     (ttt board0 (get-moves board0 player not-player)))
