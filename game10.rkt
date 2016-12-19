@@ -136,10 +136,6 @@
     (if (= (territory-player t) player) (+ result 1) result)))
 
 
-
-
-
-
 (define (pass w)
   (define m (find-move (game-moves (dice-world-gt w)) '()))
   (cond [(not m) w]
@@ -172,3 +168,19 @@
          (define ratings (rate-moves tree depth))
          (apply (if (= (game-player tree) AI) max min)
                 (map second ratings))]))
+
+(define (pass w)
+  (define m (find-move (game-moves (dice-world-gt w)) '()))
+  (cond [(not m) w]
+        [(or (no-more-moves? m) (not (= (game-player m) AI)))
+         (dice-world #f (game-board m) m)]
+        [else
+         (define ai (the-ai-plays m))
+         (dice-world #f (game-board ai) ai)]))
+
+
+
+
+
+
+
