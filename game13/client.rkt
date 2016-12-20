@@ -1,4 +1,3 @@
-
 (require 2htdp/image 2htdp/universe "shared.rkt")
 
 (provide launch-guess-client)
