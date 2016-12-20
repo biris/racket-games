@@ -54,5 +54,3 @@
 
 (define (draw-guess c)
   (overlay (text c SIZE COLOR) MT-SC))
-
-

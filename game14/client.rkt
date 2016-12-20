@@ -1,4 +1,11 @@
-(struct app (id img countdown) #:transparent) ;; waiting
+;; constatnts
+
+(define PLAYER-COLOR "red")
+(define MY-COLOR "blue")
+;; PLAYER-IMG
+
+
+(struct app (id img countdown) #:transparent)   ;; waiting
 (struct entree (id players food) #:transparent) ;; playing
 
 
@@ -54,3 +61,80 @@
         [(state? msg) (switch-to-entree s msg)] ;; (list SERIALZE (list player) (list cupcake))        
         ;; fault tolerant 
         [else s]))
+
+(define (render-entree entree)
+  (define id (entree-id entree))
+  (define pl (entree-players entree))
+  (define fd (entree-food entree))
+  (add-path id pl (add-players id pl (add-food fd BASE))))
+
+(define (time? msg)
+  (and (real? msg) (<= 0 msg 1)))
+
+(define (switch-to-entree s m)
+  (apply entree (app-id s) (rest m)))  ;; we conserve our id (it can be a player or spectator) 
+
+(define (add-players id lof base-scene)
+  (for/fold ([scn base-scene]) ([feaster lof])
+    (place-image (render-avatar id feaster)
+                 (feaster-x feaster) (feaster-y feaster)
+                 scn)))
+
+(define (render-avatar id player)
+  (define size (body-size (player-body player)))
+  (define color
+    (if (id=? id (player-id player)) MY-COLOR PLAYER-COLOR))
+  (above
+   (render-text (player-id player))
+   (overlay (render-player-score player) 
+            PLAYER-IMG
+            (circle size 'outline color))))
+
+(define (render-player-score player)
+  (render-text (number->string (get-score (body-size (player-body player))))))
+
+;; get-score (in shared)
+
+(define (render-entree entree)
+  (define id (entree-id entree))
+  (define pl (entree-players entree))
+  (define fd (entree-food entree))           
+  (add-path id pl (add-players id pl (add-food fd BASE))))
+
+
+(define (add-players id lof base-scene)
+  (for/fold ([scn base-scene]) ([feaster lof])
+    (place-image (render-avatar id feaster)
+                 (feaster-x feaster) (feaster-y feaster)
+                 scn)))
+
+(define (render-avatar id player)
+  (define size (body-size (player-body player)))
+  (define color
+    (if (id=? id (player-id player)) MY-COLOR PLAYER-COLOR))
+  (above
+   (render-text (player-id player))
+   (overlay (render-player-score player) 
+            PLAYER-IMG
+            (circle size 'outline color))))
+
+
+(define (add-path id players base-scene)
+  (define player 
+    (findf (lambda (x) (id=? id (player-id x))) players)) ;; is our player-id a true player? 
+  (if (boolean? player)
+      base-scene
+      (add-waypoint* player base-scene)))
+
+
+;; not yet
+(define (add-waypoint* player base-scene)
+  (define loc  (body-loc (player-body player)))
+  (define ways (player-waypoints player))
+  (define-values (resulting-scene _)
+    (for/fold ([scn base-scene][from loc]) ([to ways])
+      (values (add-waypoint from to scn) to)))
+  resulting-scene)
+
+
+
