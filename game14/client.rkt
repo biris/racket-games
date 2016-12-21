@@ -5,6 +5,10 @@
 ;; PLAYER-IMG
 ;; WAYPOINT-COLOR
 ;; WAYPOINT-NODE
+;; FOOD-IMG 
+;; (define END-LENGTH 2)
+
+
 (define PBAR-COLOR "red")
 (define PBAR-HEIGHT 35)
 
@@ -57,8 +61,8 @@
 
 ;; add-progress-bar
 
-
-
+(define (add-progress-bar base count)
+  (place-image (render-progress count) (/ WIDTH 2) PBAR-LOC base))
 
 ;; render-id+image
 
@@ -92,6 +96,9 @@
 (define (switch-to-entree s m)
   (apply entree (app-id s) (rest m)))  ;; we conserve our id (it can be a player or spectator) 
 
+;; 
+
+
 (define (add-players id lof base-scene)
   (for/fold ([scn base-scene]) ([feaster lof])
     (place-image (render-avatar id feaster)
@@ -120,11 +127,21 @@
   (add-path id pl (add-players id pl (add-food fd BASE))))
 
 
+;; add food
+
+
+(define (add-food foods base-scene)
+  (for/fold ([scn base-scene]) ([f foods])
+    (place-image FOOD-IMG (body-x f) (body-y f) scn)))
+
+
 (define (add-players id lof base-scene)
   (for/fold ([scn base-scene]) ([feaster lof])
     (place-image (render-avatar id feaster)
                  (feaster-x feaster) (feaster-y feaster)
                  scn)))
+
+
 
 (define (render-avatar id player)
   (define size (body-size (player-body player)))
@@ -164,7 +181,35 @@
 
 
 
+(define (handle-entree-message s msg)
+  (cond [(state? msg) (update-entree s msg)]
+        [(score? msg) (restart s msg)]
+        [else s]))
 
+;; pretty much the same as siwtch-to-entree
 
+(define (update-entree s state-msg)
+  (apply entree (entree-id s) (rest state-msg)))
 
+;; (SCORE ((id number) (id number) ...))
+;; (SERIALIZE (player ...) (cupcake ...))
+
+(define (state? msg)
+  (and (list? msg)
+       (= UPDATE-LENGTH (length msg))
+       (symbol? (first msg))
+       (list? (second msg))
+       (list? (third msg))
+       (symbol=? SERIALIZE (first msg))
+       (andmap player? (second msg))
+       (andmap body? (third msg))))
+
+;; is our message has shape of score? or state?
+(define (score? msg)
+  (and (list? msg)
+       (= END-LENGTH (length msg))
+       (symbol? (first msg))
+       (list? (second msg))
+       (symbol=? SCORE (first msg))
+       (score-list? (second msg))))
 
