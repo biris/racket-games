@@ -3,6 +3,18 @@
 (define PLAYER-COLOR "red")
 (define MY-COLOR "blue")
 ;; PLAYER-IMG
+;; WAYPOINT-COLOR
+;; WAYPOINT-NODE
+(define PBAR-COLOR "red")
+(define PBAR-HEIGHT 35)
+
+(define PBAR-TEXT (text "loading..." 20 "black"))
+
+(define PBAR-LOC (- HEIGHT PBAR-HEIGHT))
+
+(define PBAR-HEIGHT 35)
+
+
 
 
 (struct app (id img countdown) #:transparent)   ;; waiting
@@ -43,6 +55,12 @@
 (define (render-appetizer app)
   (add-progress-bar (render-id+image app) (app-countdown app)))
 
+;; add-progress-bar
+
+
+
+
+;; render-id+image
 
 (define (render-id+image app)
   (define id (app-id app))
@@ -127,7 +145,7 @@
       (add-waypoint* player base-scene)))
 
 
-;; not yet
+;; not yet 
 (define (add-waypoint* player base-scene)
   (define loc  (body-loc (player-body player)))
   (define ways (player-waypoints player))
@@ -135,6 +153,18 @@
     (for/fold ([scn base-scene][from loc]) ([to ways])
       (values (add-waypoint from to scn) to)))
   resulting-scene)
+
+(define (add-waypoint from to s)
+  (define x-from (real-part from))
+  (define y-from (imag-part from))
+  (define x-to (real-part to))
+  (define y-to (imag-part to))
+  (define with-line (add-line s x-to y-to x-from y-from WAYPOINT-COLOR))
+  (place-image WAYPOINT-NODE x-to y-to with-line))
+
+
+
+
 
 
 
