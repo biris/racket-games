@@ -20,8 +20,6 @@
 (define (get-score f) ; from size to score!
   (/ (- f PLAYER-SIZE) PLAYER-FATTEN-DELTA))
 
-
-
 (define id? string?)
 (define id=? string=?)
 
