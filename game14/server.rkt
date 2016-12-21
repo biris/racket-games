@@ -4,9 +4,14 @@
 
 ;; constants
 
+
+(define FOOD*PLAYERS 5)
+
 (define START-TIME 0) ;; ? why 0
 
 (define JOIN0 (join empty START-TIME)) ;; inint state
+
+(define WAIT-TIME 250)
 
 ;; (struct ip ip? ip-id ip-iw ip-body ip-waypoints ip-player)
 (define-values 
@@ -89,3 +94,51 @@
 
 (define (empty-bundle s)
   (make-bundle s empty empty))
+
+
+;; join state and ticks
+
+(define (wait-or-play j)
+  (cond [(keep-waiting? j) (keep-waiting j)]
+        [else              (start-game j)]))
+
+
+(define (keep-waiting? j)
+  (or (> PLAYER-LIMIT (length (join-clients j)))
+      (> WAIT-TIME (join-time j))))
+
+
+(define (keep-waiting j)
+  (set-join-time! j (+ (join-time j) 1))
+  (time-broadcast j))
+
+(define (time-broadcast j)
+  (define iworlds (map ip-iw (join-clients j)))
+  (define load%   (min 1 (/ (join-time j) WAIT-TIME)))
+  (make-bundle j (broadcast iworlds load%) empty))
+
+(define (broadcast iws msg)
+  (map (lambda (iw) (make-mail iw msg)) iws))
+
+(define (start-game j)
+  (define clients  (join-clients j))
+  (define cupcakes (bake-cupcakes (length clients)))
+  (broadcast-universe (play clients cupcakes empty)))
+
+(define (bake-cupcakes player#)
+  (for/list ([i (in-range (* player# FOOD*PLAYERS))])
+    (create-a-body CUPCAKE)))
+
+(define (broadcast-universe p)
+  (define mails (broadcast (get-iws p) (serialize-universe p)))
+  (make-bundle p mails empty))
+
+(define (get-iws p)
+  (map ip-iw (append (play-players p) (play-spectators p))))
+
+(define (serialize-universe p)
+  (define serialized-players (map ip-player (play-players p)))
+  (list SERIALIZE serialized-players (play-food p))) ;; to send it across the wire
+
+
+

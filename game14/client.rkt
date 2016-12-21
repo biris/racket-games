@@ -14,6 +14,14 @@
 ;; WAYPOINT-COLOR
 ;; WAYPOINT-NODE
 ;; FOOD-IMG 
+
+;; PBAR constants
+(define PBAR-HEIGHT 35)
+(define PBAR-LOC (- HEIGHT PBAR-HEIGHT))
+(define PBAR-COLOR "red")
+(define PBAR-TEXT (text "loading..." 20 "black"))
+
+
 (define END-LENGTH 2)
 
 (define ZERO% 0)
@@ -71,6 +79,9 @@
 
 (define (add-progress-bar base count)
   (place-image (render-progress count) (/ WIDTH 2) PBAR-LOC base))
+
+(define (render-progress count)
+  (overlay PBAR-TEXT (rectangle (* count WIDTH) PBAR-HEIGHT "solid" PBAR-COLOR)))
 
 ;; render-id+image
 
@@ -245,5 +256,19 @@
 
 (define (render-text txt)
   (text txt TEXT-SIZE TEXT-COLOR))
+
+(define (start-game j)
+  (define clients  (join-clients j))
+  (define cupcakes (bake-cupcakes (length clients)))
+  (broadcast-universe (play clients cupcakes empty)))
+
+(define (bake-cupcakes player#)
+  (for/list ([i (in-range (* player# FOOD*PLAYERS))])
+    (create-abody CUPCAKE)))
+
+
+
+
+
 
 

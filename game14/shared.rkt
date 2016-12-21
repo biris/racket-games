@@ -2,14 +2,20 @@
 (define PLAYER-SIZE (* 3 CUPCAKE)) 
 (define PLAYER-FATTEN-DELTA 5)
 
+(define CUPCAKE 15)
+
 (provide      
-;
- id?  ; to make our program coherent 
+                                        ;
+ CUPCAKE
+ id?                                   ; to make our program coherent 
  id=?
  (struct-out player) ;; 
  (struct-out body)
  get-score ;; 
  PLAYER-FATTEN-DELTA)
+
+
+
 
 
 (struct player (id body waypoints) #:prefab) ;; waypoints? 
