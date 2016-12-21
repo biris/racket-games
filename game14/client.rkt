@@ -192,7 +192,7 @@
   (apply entree (entree-id s) (rest state-msg)))
 
 ;; (SCORE ((id number) (id number) ...))
-;; (SERIALIZE (player ...) (cupcake ...))
+;;; (SERIALIZE (player ...) (cupcake ...))
 
 (define (state? msg)
   (and (list? msg)
