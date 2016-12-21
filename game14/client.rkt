@@ -2,12 +2,23 @@
 
 (define PLAYER-COLOR "red")
 (define MY-COLOR "blue")
+(define SEPERATOR ": ")
+
+(define TEXT-SIZE 20)
+(define TEXT-COLOR "black")
+
+(define SCORE-LIST-LENGTH 2)
+
+
 ;; PLAYER-IMG
 ;; WAYPOINT-COLOR
 ;; WAYPOINT-NODE
 ;; FOOD-IMG 
-;; (define END-LENGTH 2)
+(define END-LENGTH 2)
 
+(define ZERO% 0)
+
+(define INITIAL (app #f LOADING ZERO%))
 
 (define PBAR-COLOR "red")
 (define PBAR-HEIGHT 35)
@@ -17,9 +28,6 @@
 (define PBAR-LOC (- HEIGHT PBAR-HEIGHT))
 
 (define PBAR-HEIGHT 35)
-
-
-
 
 (struct app (id img countdown) #:transparent)   ;; waiting
 (struct entree (id players food) #:transparent) ;; playing
@@ -33,11 +41,11 @@
             (register server) ;; for connection
             (name label)))
 
-
-
 (define (render-the-meal meal)
   (cond [(app? meal)   (render-appetizer meal)]
         [(entree? meal) (render-entree meal)]))
+
+
 
 
 
@@ -180,11 +188,10 @@
   (place-image WAYPOINT-NODE x-to y-to with-line))
 
 
-
 (define (handle-entree-message s msg)
-  (cond [(state? msg) (update-entree s msg)]
+  (cond [(state? msg) (update-entree s msg)] ;; depending on the message recieved we update our state
         [(score? msg) (restart s msg)]
-        [else s]))
+        [else s])) ;; fault tolerance
 
 ;; pretty much the same as siwtch-to-entree
 
@@ -211,5 +218,30 @@
        (symbol? (first msg))
        (list? (second msg))
        (symbol=? SCORE (first msg))
-       (score-list? (second msg))))
+       (score-list? (second msg)))) ; the second part
 
+
+(define (score-list? l)
+  (for/and ([s l])
+    (and (list? s)
+         (= SCORE-LIST-LENGTH (length s))
+         (id? (first s))
+         (number? (second s)))))
+
+
+(define (restart s end-msg)
+  (define score-image (render-scores end-msg))
+  (app (entree-id s) (above LOADING score-image) ZERO%)) ; preserve our id
+
+(define (render-scores msg)
+  (define scores (sort (second msg) < #:key second))
+  (for/fold ([img empty-image]) ([name-score scores])
+    (define txt (get-text name-score)) ;; get string representation 
+    (above (render-text txt) img))) ;; image representation
+
+(define (get-text name-score)
+  (define-values (name score) (apply values name-score)) ;; deconstructing a pair 
+  (string-append name SEPERATOR (number->string score)))
+
+(define (render-text txt)
+  (text txt TEXT-SIZE TEXT-COLOR))
