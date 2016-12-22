@@ -1,9 +1,7 @@
 (struct join (clients [time #:mutable]) #:transparent) ;; our waiting state
 (struct play (players food spectators) #:transparent #:mutable) ;; our playing state
 
-
 ;; constants
-
 
 (define FOOD*PLAYERS 5)
 
@@ -67,6 +65,9 @@
   (join (cons new-p (join-cients j)) (join-time j)))
 
 (define add-player (make-connection join-add-player))
+
+(define (join-add-player j new-p)
+  (join (cons new-p (join-clients j)) (join-time j)))
 
 (define (named-player iw)
   (create-player iw (symbol->string (gensym (iworld-name iw)))))
@@ -140,5 +141,37 @@
   (define serialized-players (map ip-player (play-players p)))
   (list SERIALIZE serialized-players (play-food p))) ;; to send it across the wire
 
+;; play state 
 
+(define (play-add-spectator pu new-s)
+  (define players (play-players pu))
+  (define spectators (play-spectators pu))
+  (play players (play-food pu) (cons new-s spectators)))
+
+(define add-spectator (make-connection play-add-spectator)) ;; add and send mails (serialize)
+
+
+(define (goto p iw msg)
+  (define c (make-rectangular (second msg) (third msg)))
+  (set-play-players! p (add-waypoint (play-players p) c iw))
+  (broadcast-universe p))
+
+;; [Listof IPs] Complex IWorld -> [Listof IPs]
+
+(define (add-waypoint ps c iw)
+  (for/list ([p ps])
+    (cond [(iworld=? (ip-iw p) iw)
+           (ip (ip-iw p)
+               (ip-id p) 
+               (ip-body p) 
+               (append (ip-waypoints p) (list c)))]
+          [else p])))
+
+(define (drop-player p iw)
+  (broadcast-universe (play-remove p iw)))
+
+(define (play-remove p iw)
+  (define players (play-players p))
+  (define spectators (play-spectators p))
+  (play (rip iw players) (play-food) (rip iw spectators)))
 
