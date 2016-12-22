@@ -11,10 +11,9 @@
  id=?
  (struct-out player) ;; 
  (struct-out body)
+ SCORE
  get-score ;; 
  PLAYER-FATTEN-DELTA)
-
-
 
 
 
@@ -29,7 +28,7 @@
 (define id? string?)
 (define id=? string=?)
 
-
+(define SCORE 'score)
 
 
 

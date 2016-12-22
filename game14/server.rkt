@@ -11,6 +11,14 @@
 
 (define WAIT-TIME 250)
 
+(define WEIGHT-FACTOR 2.1)
+
+
+(define BASE-SPEED (/ (expt PLAYER-SIZE 2) WEIGHT-FACTOR))
+
+
+(define START-TIME 0)
+
 ;; (struct ip ip? ip-id ip-iw ip-body ip-waypoints ip-player)
 (define-values 
   (ip ip? ip-id ip-iw ip-body ip-waypoints ip-player)
@@ -150,7 +158,6 @@
 
 (define add-spectator (make-connection play-add-spectator)) ;; add and send mails (serialize)
 
-
 (define (goto p iw msg)
   (define c (make-rectangular (second msg) (third msg)))
   (set-play-players! p (add-waypoint (play-players p) c iw))
@@ -174,4 +181,92 @@
   (define players (play-players p))
   (define spectators (play-spectators p))
   (play (rip iw players) (play-food) (rip iw spectators)))
+
+
+
+;; clock tick in play state
+
+(define (move-and-eat pu)
+  (define nplayers  (move-player* (play-players pu)))
+  (define nfood (feed-em-all nplayers (play-food pu)))
+  (progress nplayers nfood (play-spectators pu))) ;; state transitioning 
+
+
+(define (move-player* players)
+  (for/list ([p players])
+    (define waypoints (ip-waypoints p))
+    (cond [(empty? waypoints) p]
+          [else (define body  (ip-body p))
+                (define nwpts 
+                  (move-toward-waypoint body waypoints)) 
+                (ip (ip-iw p) (ip-id p) body nwpts)])))
+
+;; mutate body and give up next waypoints
+
+(define (move-toward-waypoint body waypoints)
+  (define goal  (first waypoints))
+  (define bloc  (body-loc body))
+  (define line  (- goal bloc))
+  (define dist  (magnitude line))
+  (define speed (/ BASE-SPEED (body-size body)))
+  (cond
+   [(<= dist speed) 
+    (set-body-loc! body goal)
+    (rest waypoints)]
+   [else                                ; (> distance speed 0)
+    (define velocity (* (/ line dist) speed))
+     (set-body-loc! body (+ bloc velocity))
+    waypoints]))
+
+(define (feed-em-all players foods)
+  (for/fold ([foods foods]) ([p players])
+    (eat-all-the-things p foods)))
+
+
+;; effect grow the play 
+;; make the cupcake disspear from list 
+
+(define (eat-all-the-things player foods)
+  (define b (ip-body player))
+  (for/fold ([foods '()]) ([f foods])
+    (cond
+     [(body-collide? f b)
+      (set-body-size! b (+ PLAYER-FATTEN-DELTA (body-size b)))
+      foods]
+     [else (cons f foods)])))
+
+(define (body-collide? s1 s2)
+  (<= (magnitude (- (body-loc s1) (body-loc s2)))
+      (+ (body-size s1) (body-size s2))))
+
+(define (progress pls foods spectators)
+  (define p (play pls foods spectators))
+  (cond [(empty? foods) (end-game-broadcast p)] ;; transition and send off scores
+        [else (broadcast-universe p)]))
+
+
+(define (end-game-broadcast p)
+  (define iws (get-iws p))
+  (define msg (list SCORE (score (play-players p))))
+  (define mls (broadcast iws msg))
+  (make-bundle (remake-join p) mls empty))
+
+
+(define (score ps)
+  (for/list ([p ps])
+    (list (ip-id p) (get-score (body-size (ip-body p))))))
+
+(define (remake-join p)
+  (define players (refresh (play-players p)))
+  (define spectators (play-spectators p))
+  (join (append players spectators) START-TIME))
+
+
+(define (refresh players)
+  (for/list ([p players])
+    (create-player (ip-iw p) (ip-id p))))
+
+
+
+
 
