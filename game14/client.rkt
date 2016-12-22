@@ -265,10 +265,3 @@
 (define (bake-cupcakes player#)
   (for/list ([i (in-range (* player# FOOD*PLAYERS))])
     (create-abody CUPCAKE)))
-
-
-
-
-
-
-
